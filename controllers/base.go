@@ -1,4 +1,4 @@
-package apis
+package controllers
 
 import (
 	"github.com/gin-gonic/gin"
@@ -6,6 +6,6 @@ import (
 
 func Ping(c *gin.Context) {
 	c.JSON(200, gin.H{
-		"message": "pong 1",
+		"message": "pong 3",
 		})
 }
