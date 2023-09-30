@@ -4,6 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"go_short/models"
+	"go_short/services"
+	"log"
 )
 
 type UrlMappingController struct{}
@@ -27,5 +29,21 @@ func ( umc * UrlMappingController ) GetUrlMapping(c *gin.Context) {
 
 func ( umc * UrlMappingController ) SaveUrlMapping(c *gin.Context) {
 	originURL := c.Query("url")
-	models.DB.Create(&models.UrlMapping{Rename_url: "12.st.com", Origin_url: originURL})
+	urlMapping := models.UrlMapping{Rename_url: nil, Origin_url: originURL}
+
+	if err := models.DB.Create(&urlMapping).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+	id := int(urlMapping.ID)
+	urlMapping.Rename_url = services.DecimalToBase62(id)
+
+	if err := models.DB.Save(&urlMapping).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+	}
+	log.Println(&urlMapping)
+	c.JSON(200, gin.H{
+			"short_url": urlMapping.Rename_url,
+		})
 }
