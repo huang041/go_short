@@ -12,5 +12,9 @@ func InitRouter() *gin.Engine{
 	urlMappingController := UrlMappingController{}
 	router.GET("/url_mapping", urlMappingController.GetUrlMapping)
 	router.POST("/url_mapping", urlMappingController.SaveUrlMapping)
+	
+	// Route for redirecting to original URL when visiting /{short_url}
+	router.GET("/:shortURL", urlMappingController.RedirectToOriginalUrl)
+	
 	return router
 }

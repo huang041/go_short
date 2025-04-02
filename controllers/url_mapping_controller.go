@@ -28,6 +28,24 @@ func (umc *UrlMappingController) GetUrlMapping(c *gin.Context) {
 	})
 }
 
+// RedirectToOriginalUrl redirects to the original URL when a user visits /{short_url}
+func (umc *UrlMappingController) RedirectToOriginalUrl(c *gin.Context) {
+	shortURL := c.Param("shortURL")
+	
+	var urlMapping models.UrlMapping
+	result := models.DB.Where("rename_url = ?", shortURL).First(&urlMapping)
+	
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"code": http.StatusNotFound,
+			"msg":  "Short URL not found",
+		})
+		return
+	}
+	
+	c.Redirect(http.StatusFound, urlMapping.Origin_url)
+}
+
 func (umc *UrlMappingController) SaveUrlMapping(c *gin.Context) {
 	// Create a struct to bind the request body
 	var request struct {
