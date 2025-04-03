@@ -19,6 +19,8 @@ type Database struct {
 type Config struct {
 	// Database
 	DB Database
+	// URL Shortener
+	ShortenerAlgorithm string
 }
 
 var config Config
@@ -39,6 +41,12 @@ func loadConfig() {
 			Password: os.Getenv("DB_PASSWORD"),
 			DB_name: os.Getenv("DB_NAME"),
 		},
+		ShortenerAlgorithm: os.Getenv("SHORTENER_ALGORITHM"),
+	}
+
+	// Set default algorithm if not specified
+	if config.ShortenerAlgorithm == "" {
+		config.ShortenerAlgorithm = "base62"
 	}
 }
 

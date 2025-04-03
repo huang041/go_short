@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"go_short/conf"
 	"go_short/models"
 	"go_short/services"
 	"log"
@@ -58,21 +59,52 @@ func (umc *UrlMappingController) SaveUrlMapping(c *gin.Context) {
 		return
 	}
 
-	urlMapping := models.UrlMapping{Rename_url: nil, Origin_url: request.URL}
+	// Get the algorithm from configuration
+	config := conf.Conf()
+	algorithm := config.ShortenerAlgorithm
 
+	// Create URL mapping with algorithm from config
+	urlMapping := models.UrlMapping{
+		Rename_url: nil, 
+		Origin_url: request.URL,
+		Algorithm:  algorithm,
+	}
+
+	// Save to database to get ID
 	if err := models.DB.Create(&urlMapping).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	id := int(urlMapping.ID)
-	urlMapping.Rename_url = services.DecimalToBase62(id)
 
+	// Get ID for shortening
+	id := int(urlMapping.ID)
+	
+	// Create shortener with appropriate strategy based on algorithm from config
+	var shortener *services.URLShortener
+	
+	switch algorithm {
+	case "base64":
+		shortener = services.NewURLShortener(&services.Base64Strategy{})
+	case "md5":
+		shortener = services.NewURLShortener(&services.MD5Strategy{})
+	case "random":
+		shortener = services.NewURLShortener(&services.RandomStrategy{})
+	default: // base62 is default
+		shortener = services.NewURLShortener(&services.Base62Strategy{})
+	}
+	
+	// Generate short URL
+	urlMapping.Rename_url = shortener.ShortenURL(request.URL, id)
+
+	// Save updated mapping with short URL
 	if err := models.DB.Save(&urlMapping).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	
 	log.Println(&urlMapping)
 	c.JSON(200, gin.H{
 		"short_url": urlMapping.Rename_url,
+		"algorithm": urlMapping.Algorithm,
 	})
 }
