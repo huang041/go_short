@@ -6,6 +6,7 @@ import (
 	"go_short/services"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,6 +34,13 @@ func (umc *UrlMappingController) GetUrlMapping(c *gin.Context) {
 func (umc *UrlMappingController) RedirectToOriginalUrl(c *gin.Context) {
 	shortURL := c.Param("shortURL")
 	
+	// Try to get the URL from cache first
+	if originalURL, found := services.GetCachedURL(shortURL); found {
+		c.Redirect(http.StatusFound, originalURL)
+		return
+	}
+	
+	// If not in cache, query the database
 	var urlMapping models.UrlMapping
 	result := models.DB.Where("rename_url = ?", shortURL).First(&urlMapping)
 	
@@ -43,6 +51,9 @@ func (umc *UrlMappingController) RedirectToOriginalUrl(c *gin.Context) {
 		})
 		return
 	}
+	
+	// Cache the result for future requests (cache for 24 hours)
+	services.CacheURL(shortURL, urlMapping.Origin_url, 24*time.Hour)
 	
 	c.Redirect(http.StatusFound, urlMapping.Origin_url)
 }
@@ -100,6 +111,11 @@ func (umc *UrlMappingController) SaveUrlMapping(c *gin.Context) {
 	if err := models.DB.Save(&urlMapping).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+	
+	// Cache the new URL mapping (cache for 24 hours)
+	if urlMapping.Rename_url != nil {
+		services.CacheURL(*urlMapping.Rename_url, urlMapping.Origin_url, 24*time.Hour)
 	}
 	
 	log.Println(&urlMapping)
