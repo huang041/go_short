@@ -1,11 +1,12 @@
 # Go Short - URL Shortener Service
 
-A simple and efficient URL shortener service built with Go, Gin, and PostgreSQL.
+A simple and efficient URL shortener service built with Go, Gin, PostgreSQL, and Redis.
 
 ## Features
 
 - Shorten long URLs to compact, easy-to-share links
-- Base62 encoding for efficient URL shortening
+- Multiple URL shortening algorithms (Base62, Base64, MD5, Random)
+- Redis caching for improved performance
 - RESTful API for URL management
 - PostgreSQL database for persistent storage
 - Docker and Docker Compose support for easy deployment
@@ -14,6 +15,7 @@ A simple and efficient URL shortener service built with Go, Gin, and PostgreSQL.
 
 - **Backend**: Go with Gin framework
 - **Database**: PostgreSQL with GORM
+- **Caching**: Redis
 - **Containerization**: Docker and Docker Compose
 - **Configuration**: Environment variables via .env file
 
@@ -39,14 +41,25 @@ go_short/
 
 - `GET /ping` - Health check endpoint
 - `GET /url_mapping` - Get all URL mappings
-- `POST /url_mapping?url={original_url}` - Create a new short URL
+- `POST /url_mapping` - Create a new short URL (JSON body with URL)
+- `GET /{short_url}` - Redirect to the original URL
+
+## URL Shortening Algorithms
+
+The service supports multiple URL shortening algorithms that can be configured via the `SHORTENER_ALGORITHM` environment variable:
+
+- `base62` (default) - Converts database ID to a Base62 string (0-9, a-z, A-Z)
+- `base64` - Encodes the URL with Base64 and takes the first 8 characters
+- `md5` - Creates an MD5 hash of the URL + ID and takes the first 8 characters
+- `random` - Generates 8 random characters
 
 ## Getting Started
 
 ### Prerequisites
 
-- Go 1.16 or higher
+- Go 1.19 or higher
 - PostgreSQL
+- Redis
 - Docker and Docker Compose (optional)
 
 ### Local Development
@@ -60,7 +73,7 @@ go_short/
 2. Create and configure the .env file
    ```
    cp .env.example .env
-   # Edit .env with your database credentials
+   # Edit .env with your database and Redis credentials
    ```
 
 3. Run the application
@@ -68,7 +81,7 @@ go_short/
    go run main.go
    ```
 
-4. The service will be available at `http://127.0.0.1:8080`
+4. The service will be available at `http://localhost:8080`
 
 ### Docker Deployment
 
@@ -77,7 +90,7 @@ go_short/
    docker-compose up -d
    ```
 
-2. The service will be available at `http://localhost:8080`
+2. The service will be available at `http://localhost:9080`
 
 ## Environment Variables
 
@@ -88,13 +101,29 @@ go_short/
 | DB_USER | PostgreSQL username | postgres |
 | DB_PASSWORD | PostgreSQL password | postgres |
 | DB_NAME | PostgreSQL database name | go_short |
+| SHORTENER_ALGORITHM | URL shortening algorithm | base62 |
+| REDIS_HOST | Redis host | redis |
+| REDIS_PORT | Redis port | 6379 |
+| REDIS_PASSWORD | Redis password | |
+| REDIS_DB | Redis database number | 0 |
 
 ## How It Works
 
 1. When a new URL is submitted, it's stored in the database
-2. The database ID is converted to a Base62 string (using characters 0-9, a-z, A-Z)
-3. This Base62 string becomes the short URL identifier
-4. When a short URL is accessed, the system looks up the original URL and redirects
+2. The system generates a short URL using the configured algorithm
+3. The URL mapping is cached in Redis for faster access
+4. When a short URL is accessed, the system:
+   - First checks the Redis cache for the original URL
+   - If not found in cache, queries the database
+   - Redirects to the original URL
+   - Caches the result for future requests (24-hour TTL)
+
+## Performance Optimization
+
+The service uses Redis caching to improve performance:
+- Frequently accessed URLs are served from cache, reducing database load
+- Cache entries expire after 24 hours to ensure data freshness
+- The system gracefully degrades if Redis is unavailable (falls back to database)
 
 ## License
 
