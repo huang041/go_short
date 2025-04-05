@@ -1,0 +1,26 @@
+FROM golang:1.21-alpine
+
+# 安裝開發所需的工具
+RUN apk add --no-cache git make vim curl
+
+# 設定 Go 環境和網路超時
+ENV GO111MODULE=on
+ENV GOPROXY=https://proxy.golang.org,direct
+ENV GOSUMDB=sum.golang.org
+
+# 安裝 air 熱重載工具，用於開發時自動重啟服務
+RUN go install github.com/cosmtrek/air@v1.44.0
+
+# 安裝 golang-migrate 工具
+RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.16.2
+
+# 設置工作目錄
+WORKDIR /app
+
+# 創建一個小型工具腳本，方便執行遷移命令
+RUN echo '#!/bin/sh\n\
+migrate -path=./migrations -database "postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@${DB_HOST:-postgres}:${DB_PORT:-5432}/${DB_NAME:-go_short}?sslmode=disable" "$@"\n\
+' > /usr/local/bin/gomigrate && chmod +x /usr/local/bin/gomigrate
+
+# 容器默認以命令行方式啟動，以便交互使用
+CMD ["sh"] 

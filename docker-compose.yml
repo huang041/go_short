@@ -15,6 +15,25 @@ services:
     networks:
       - go_short_network
 
+  # 開發模式服務，掛載當前目錄並用於執行 Go 命令
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: go_short_dev
+    ports:
+      - "9081:8080"
+    volumes:
+      - .:/app  # 掛載當前目錄到容器的 /app
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - go_short_network
+    # 使用 tty 和 stdin_open 保持容器運行並允許交互
+    tty: true
+    stdin_open: true
+
   postgres:
     image: postgres:14-alpine
     container_name: go_short_db
@@ -35,7 +54,7 @@ services:
     container_name: go_short_redis
     restart: always
     ports:
-      - "6379:6379"
+      - "7379:6379"
     volumes:
       - redis_data:/data
     networks:
