@@ -9,17 +9,19 @@ import (
 
 // Router 負責集中管理所有 API 路由
 type Router struct {
-	engine     *gin.Engine
-	urlHandler *handler.URLHandler
-	config     *conf.Config
+	engine      *gin.Engine
+	urlHandler  *handler.URLHandler
+	userHandler *handler.UserHandler
+	config      *conf.Config
 }
 
 // NewRouter 建立一個新的路由管理器
-func NewRouter(engine *gin.Engine, urlHandler *handler.URLHandler, config *conf.Config) *Router {
+func NewRouter(engine *gin.Engine, urlHandler *handler.URLHandler, userHandler *handler.UserHandler, config *conf.Config) *Router {
 	return &Router{
-		engine:     engine,
-		urlHandler: urlHandler,
-		config:     config,
+		engine:      engine,
+		urlHandler:  urlHandler,
+		userHandler: userHandler,
+		config:      config,
 	}
 }
 
@@ -28,6 +30,7 @@ func (r *Router) SetupRoutes() {
 	r.setupMiddlewares()
 	r.setupHealthCheckRoutes()
 	r.setupURLShortenerRoutes()
+	r.setupUserRoutes()
 
 	// 在未來可以增加更多其他領域的路由設定
 	// r.setupUserRoutes()
@@ -59,4 +62,13 @@ func (r *Router) setupURLShortenerRoutes() {
 
 	// 重定向 API
 	r.engine.GET("/:shortURL", r.urlHandler.RedirectToOriginalURL)
+}
+
+// setupUserRoutes 設定使用者相關路由
+func (r *Router) setupUserRoutes() {
+	userGroup := r.engine.Group("/auth")
+	{
+		userGroup.POST("/register", r.userHandler.Register)
+		userGroup.POST("/login", r.userHandler.Login)
+	}
 }

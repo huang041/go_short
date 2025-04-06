@@ -5,63 +5,38 @@ import (
 	"log"
 	"time"
 
-	"go_short/domain/urlshortener/repository"
 	"go_short/domain/urlshortener/service"
-	gormpersistence "go_short/infra/persistence/gorm"
-	redispersistence "go_short/infra/persistence/redis"
-
-	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
 
 // App 是 URL 縮短服務的應用層
 type App struct {
-	DB          *gorm.DB
-	RedisClient *redis.Client
-	URLService  service.URLShortenerService
-	URLRepo     repository.URLRepository
-	CacheRepo   repository.CacheRepository
+	URLService service.URLShortenerService // 依賴 Domain Service Interface
 }
 
-// NewApp 創建一個新的 URL 縮短服務應用
-func NewApp(db *gorm.DB, redisClient *redis.Client) *App {
-	// 創建儲存庫
-	urlRepo := gormpersistence.NewGormURLRepository(db)
-	cacheRepo := redispersistence.NewRedisCacheRepository(redisClient)
-
-	// 創建服務
-	urlService := service.NewURLService(urlRepo, cacheRepo, 24*time.Hour)
-
+// NewApp 創建應用服務實例，接收 Service Interface 作為依賴
+func NewApp(urlService service.URLShortenerService /*, urlRepo repository.URLRepository, cacheRepo repository.CacheRepository*/) *App {
 	return &App{
-		DB:          db,
-		RedisClient: redisClient,
-		URLService:  urlService,
-		URLRepo:     urlRepo,
-		CacheRepo:   cacheRepo,
+		URLService: urlService,
 	}
 }
 
-// GetURLService 返回 URL 服務，供外部 Handler 使用
+// GetURLService 返回 URL 服務 (現在只是返回注入的 service)
 func (app *App) GetURLService() service.URLShortenerService {
 	return app.URLService
 }
 
-// InitDatabase 檢查數據庫連接（不再執行遷移）
+// InitDatabase 檢查數據庫連接 - 現在應由 Domain Service 或 Infra 處理
+// 這個方法可能不再屬於 Application 層的職責
 func (app *App) InitDatabase() error {
-	// 可以添加一個簡單的 ping 檢查，確保 DB 連接正常
-	sqlDB, err := app.DB.DB()
-	if err != nil {
-		return err
-	}
-	if err := sqlDB.Ping(); err != nil {
-		return err
-	}
-	log.Println("Database connection verified.")
+	// 如果 Service 需要 DB 連接，可以透過 Service 的方法檢查
+	// 或者直接移除此方法，讓 bootstrap 或 infra 處理連接檢查
+	log.Println("Database initialization/check responsibility moved.")
 	return nil
 }
 
-// StartCleanupTask 啟動定期清理過期 URL 的任務
+// StartCleanupTask 啟動背景任務
 func (app *App) StartCleanupTask(ctx context.Context) {
+	// 這個邏輯可以保留在 App 層，因為它協調了 Service 的操作
 	ticker := time.NewTicker(1 * time.Hour)
 	log.Println("Starting background cleanup task...")
 	go func() {
@@ -70,6 +45,7 @@ func (app *App) StartCleanupTask(ctx context.Context) {
 			select {
 			case <-ticker.C:
 				log.Println("Running expired URLs cleanup...")
+				// 呼叫注入的 Service
 				if err := app.URLService.CleanupExpiredURLs(ctx); err != nil {
 					log.Printf("Failed to cleanup expired URLs: %v", err)
 				} else {
