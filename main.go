@@ -11,6 +11,7 @@ import (
 	"go_short/domain/urlshortener/app"
 	"go_short/infra/database"
 	"go_short/internal/api"
+	"go_short/internal/api/handler"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -36,6 +37,10 @@ func main() {
 	// 創建應用程序
 	ctx := context.Background()
 	urlApp := app.NewURLShortenerApp(db, redisClient)
+	urlService := urlApp.GetURLService()
+
+	// 創建 Handler，注入 Service
+	urlHandler := handler.NewURLHandler(urlService)
 
 	// 初始化數據庫結構
 	if err := urlApp.InitDatabase(); err != nil {
@@ -49,7 +54,7 @@ func main() {
 	server := gin.Default()
 
 	// 使用集中式的路由管理
-	apiRouter := api.NewRouter(server, urlApp.GetURLHandler(), config)
+	apiRouter := api.NewRouter(server, urlHandler, config)
 	apiRouter.SetupRoutes()
 
 	// 啟動 HTTP 服務器

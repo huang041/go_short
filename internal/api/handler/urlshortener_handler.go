@@ -24,8 +24,8 @@ func NewURLHandler(urlService service.URLShortenerService) *URLHandler {
 // CreateShortURL 處理創建短 URL 的請求
 func (h *URLHandler) CreateShortURL(c *gin.Context) {
 	var request struct {
-		URL       string  `json:"url" binding:"required"`
-		ExpiresIn *int    `json:"expires_in,omitempty"` // 過期時間（以小時為單位）
+		URL       string `json:"url" binding:"required"`
+		ExpiresIn *int   `json:"expires_in,omitempty"` // 過期時間（以小時為單位）
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -58,8 +58,8 @@ func (h *URLHandler) CreateShortURL(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"short_url": urlMapping.ShortURL,
-		"algorithm": urlMapping.Algorithm,
+		"short_url":  urlMapping.ShortURL,
+		"algorithm":  urlMapping.Algorithm,
 		"expires_at": urlMapping.ExpiresAt,
 	})
 }

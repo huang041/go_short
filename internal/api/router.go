@@ -2,7 +2,7 @@ package api
 
 import (
 	"go_short/conf"
-	"go_short/domain/urlshortener/handler"
+	"go_short/internal/api/handler"
 
 	"github.com/gin-gonic/gin"
 )

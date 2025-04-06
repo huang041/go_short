@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"go_short/domain/urlshortener/entity"
-	"go_short/domain/urlshortener/handler"
 	"go_short/domain/urlshortener/repository"
 	"go_short/domain/urlshortener/service"
 	gormpersistence "go_short/infra/persistence/gorm"
@@ -20,7 +19,6 @@ import (
 type URLShortenerApp struct {
 	DB          *gorm.DB
 	RedisClient *redis.Client
-	URLHandler  *handler.URLHandler
 	URLService  service.URLShortenerService
 	URLRepo     repository.URLRepository
 	CacheRepo   repository.CacheRepository
@@ -35,22 +33,18 @@ func NewURLShortenerApp(db *gorm.DB, redisClient *redis.Client) *URLShortenerApp
 	// 創建服務
 	urlService := service.NewURLService(urlRepo, cacheRepo, 24*time.Hour)
 
-	// 創建處理器
-	urlHandler := handler.NewURLHandler(urlService)
-
 	return &URLShortenerApp{
 		DB:          db,
 		RedisClient: redisClient,
-		URLHandler:  urlHandler,
 		URLService:  urlService,
 		URLRepo:     urlRepo,
 		CacheRepo:   cacheRepo,
 	}
 }
 
-// GetURLHandler 返回 URL 處理器，供外部路由系統使用
-func (app *URLShortenerApp) GetURLHandler() *handler.URLHandler {
-	return app.URLHandler
+// GetURLService 返回 URL 服務，供外部 Handler 使用 (如果需要)
+func (app *URLShortenerApp) GetURLService() service.URLShortenerService {
+	return app.URLService
 }
 
 // InitDatabase 初始化數據庫
