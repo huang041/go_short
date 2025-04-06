@@ -63,18 +63,12 @@ graph TD
 
     Main --> Bootstrap
     Main --> App
-    # Main 依賴 App 是為了優雅關閉和背景任務觸發
 
     Persistence --> RepoInterface
-    # 實作介面
     GormImpl --> Entity
-    # GORM 實作需要實體定義
     RedisImpl --> RepoInterface
-    # 實作介面
 
     DBInit --> Config
     Persistence --> DBInit
-    # 可能需要 DB 連接
     App --> DBInit
-    # 可能需要 DB 連接 (e.g., Ping)
 ``` 
