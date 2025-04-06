@@ -42,9 +42,11 @@ func main() {
 	// 創建 Handler，注入 Service
 	urlHandler := handler.NewURLHandler(urlService)
 
-	// 初始化數據庫結構
+	// 初始化數據庫結構 (現在這個方法是空的，只打印日誌)
 	if err := urlApp.InitDatabase(); err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		// 這裡可能不需要 Fatalf 了，除非 InitDatabase 返回了嚴重錯誤
+		log.Printf("Database initialization check failed: %v", err)
+		// os.Exit(1) // 或者根據錯誤類型決定是否退出
 	}
 
 	// 啟動定期清理過期 URL 的任務

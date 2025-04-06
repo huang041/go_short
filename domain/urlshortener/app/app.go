@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"go_short/domain/urlshortener/entity"
 	"go_short/domain/urlshortener/repository"
 	"go_short/domain/urlshortener/service"
 	gormpersistence "go_short/infra/persistence/gorm"
@@ -47,10 +46,12 @@ func (app *URLShortenerApp) GetURLService() service.URLShortenerService {
 	return app.URLService
 }
 
-// InitDatabase 初始化數據庫
+// InitDatabase 初始化數據庫 - 移除 AutoMigrate
 func (app *URLShortenerApp) InitDatabase() error {
-	// 自動遷移數據庫結構
-	return app.DB.AutoMigrate(&entity.URLMapping{})
+	// 自動遷移數據庫結構 - 已移除
+	// return app.DB.AutoMigrate(&entity.URLMapping{})
+	log.Println("Database initialization skipped (using migrations instead).")
+	return nil // 或返回一個表示無需操作的特定錯誤
 }
 
 // StartCleanupTask 啟動定期清理過期 URL 的任務
