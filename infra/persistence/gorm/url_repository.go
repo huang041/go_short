@@ -1,4 +1,4 @@
-package repository
+package gormpersistence
 
 import (
 	"context"
@@ -6,24 +6,27 @@ import (
 	"time"
 
 	"go_short/domain/urlshortener/entity"
+	"go_short/domain/urlshortener/repository"
 
 	"gorm.io/gorm"
 )
 
-// PostgresURLRepository 是 URLRepository 的 PostgreSQL 實現
-type PostgresURLRepository struct {
+// urlRepository 是 URLRepository 的 PostgreSQL 實現
+// 使用小寫開頭使其成為包私有，因為我們通過構造函數返回接口
+type urlRepository struct {
 	db *gorm.DB
 }
 
-// NewPostgresURLRepository 創建一個新的 PostgreSQL URL 儲存庫
-func NewPostgresURLRepository(db *gorm.DB) *PostgresURLRepository {
-	return &PostgresURLRepository{
+// NewGormURLRepository 創建一個新的 GORM URL 儲存庫實例
+// 返回的是接口類型，而不是具體的 struct
+func NewGormURLRepository(db *gorm.DB) repository.URLRepository {
+	return &urlRepository{
 		db: db,
 	}
 }
 
 // FindByShortURL 根據短 URL 查找映射
-func (r *PostgresURLRepository) FindByShortURL(ctx context.Context, shortURL string) (*entity.URLMapping, error) {
+func (r *urlRepository) FindByShortURL(ctx context.Context, shortURL string) (*entity.URLMapping, error) {
 	var mapping entity.URLMapping
 	result := r.db.WithContext(ctx).Where("short_url = ?", shortURL).First(&mapping)
 	if result.Error != nil {
@@ -36,7 +39,7 @@ func (r *PostgresURLRepository) FindByShortURL(ctx context.Context, shortURL str
 }
 
 // FindByOriginalURL 根據原始 URL 查找映射
-func (r *PostgresURLRepository) FindByOriginalURL(ctx context.Context, originalURL string) (*entity.URLMapping, error) {
+func (r *urlRepository) FindByOriginalURL(ctx context.Context, originalURL string) (*entity.URLMapping, error) {
 	var mapping entity.URLMapping
 	result := r.db.WithContext(ctx).Where("original_url = ?", originalURL).First(&mapping)
 	if result.Error != nil {
@@ -49,17 +52,17 @@ func (r *PostgresURLRepository) FindByOriginalURL(ctx context.Context, originalU
 }
 
 // Save 保存 URL 映射
-func (r *PostgresURLRepository) Save(ctx context.Context, mapping *entity.URLMapping) error {
+func (r *urlRepository) Save(ctx context.Context, mapping *entity.URLMapping) error {
 	return r.db.WithContext(ctx).Create(mapping).Error
 }
 
 // Update 更新 URL 映射
-func (r *PostgresURLRepository) Update(ctx context.Context, mapping *entity.URLMapping) error {
+func (r *urlRepository) Update(ctx context.Context, mapping *entity.URLMapping) error {
 	return r.db.WithContext(ctx).Save(mapping).Error
 }
 
 // FindAll 獲取所有 URL 映射
-func (r *PostgresURLRepository) FindAll(ctx context.Context) ([]*entity.URLMapping, error) {
+func (r *urlRepository) FindAll(ctx context.Context) ([]*entity.URLMapping, error) {
 	var mappings []*entity.URLMapping
 	result := r.db.WithContext(ctx).Find(&mappings)
 	if result.Error != nil {
@@ -69,6 +72,6 @@ func (r *PostgresURLRepository) FindAll(ctx context.Context) ([]*entity.URLMappi
 }
 
 // DeleteExpired 刪除所有過期的 URL 映射
-func (r *PostgresURLRepository) DeleteExpired(ctx context.Context) error {
+func (r *urlRepository) DeleteExpired(ctx context.Context) error {
 	return r.db.WithContext(ctx).Where("expires_at IS NOT NULL AND expires_at < ?", time.Now()).Delete(&entity.URLMapping{}).Error
 }

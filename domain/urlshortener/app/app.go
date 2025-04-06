@@ -9,6 +9,8 @@ import (
 	"go_short/domain/urlshortener/handler"
 	"go_short/domain/urlshortener/repository"
 	"go_short/domain/urlshortener/service"
+	gormpersistence "go_short/infra/persistence/gorm"
+	redispersistence "go_short/infra/persistence/redis"
 
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -27,8 +29,8 @@ type URLShortenerApp struct {
 // NewURLShortenerApp 創建一個新的 URL 縮短服務應用
 func NewURLShortenerApp(db *gorm.DB, redisClient *redis.Client) *URLShortenerApp {
 	// 創建儲存庫
-	urlRepo := repository.NewPostgresURLRepository(db)
-	cacheRepo := repository.NewRedisCacheRepository(redisClient)
+	urlRepo := gormpersistence.NewGormURLRepository(db)
+	cacheRepo := redispersistence.NewRedisCacheRepository(redisClient)
 
 	// 創建服務
 	urlService := service.NewURLService(urlRepo, cacheRepo, 24*time.Hour)
