@@ -20,7 +20,7 @@ graph TD
         Domain[domain/urlshortener]
         Entity[entity/]
         DomainService[service/]
-        RepoInterface[repository/ (介面)]
+        RepoInterface["repository/ (介面)"]
         Domain --- Entity
         Domain --- DomainService
         Domain --- RepoInterface
