@@ -18,26 +18,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize dependencies: %v", err)
 	}
-	// 延遲關閉資源
 	defer deps.Close()
-
-	// 初始化數據庫 (現在只做連接檢查)
-	if err := deps.URLApp.InitDatabase(); err != nil {
-		log.Printf("Database initialization check failed: %v", err)
-		// 根據業務決定是否退出
-		// os.Exit(1)
-	}
 
 	// 創建一個可用於取消背景任務的 context
 	appCtx, cancelAppCtx := context.WithCancel(context.Background())
-	defer cancelAppCtx() // 確保在 main 結束時取消 context
+	defer cancelAppCtx()
 
-	// 啟動定期清理過期 URL 的任務
-	deps.URLApp.StartCleanupTask(appCtx)
+	// 啟動定期清理過期 URL 的任務 (確保 URLApp 實例被正確傳遞)
+	deps.URLApp.StartCleanupTask(appCtx) // 使用 Bootstrap 返回的 URLApp 實例
 
 	// --- 配置和啟動 HTTP 伺服器 ---
 	server := &http.Server{
-		Addr:    ":8080",        // 可以從配置讀取
+		Addr:    ":8080",        // 應從 deps.Config 讀取
 		Handler: deps.GinEngine, // 使用 bootstrap 返回的 gin Engine
 	}
 
