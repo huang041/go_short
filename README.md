@@ -23,40 +23,42 @@ A simple and efficient URL shortener service built with Go, Gin, PostgreSQL, and
 
 ## Project Structure
 
+```text
 go_short/
-├── conf/ # Configuration management (loading .env)
-├── domain/ # Core domain logic (business rules, entities)
-│ ├── identity/ # User management domain
-│ │ ├── entity/ # User entity definition
-│ │ ├── service/ # Identity domain services (e.g., user status logic)
-│ │ └── repository/ # Repository interfaces (contracts for data access)
-│ └── urlshortener/ # URL shortener domain
-│ ├── entity/ # URLMapping entity definition
-│ ├── service/ # URL shortening/lookup logic
-│ └── repository/ # Repository interfaces
-├── infra/ # Infrastructure implementations (database, cache)
-│ ├── database/ # Database connection setup (using GORM)
-│ └── persistence/ # Repository implementations (gorm, redis)
-├── internal/ # Internal application code (not meant for external reuse)
-│ ├── api/ # API layer (routing, handlers)
-│ │ ├── handler/ # HTTP request handlers (parsing, validation, calling app layer)
-│ │ └── router.go # API route definitions using Gin
-│ ├── application/ # Application services (use cases orchestration)
-│ │ ├── identity/ # Identity use cases (RegisterUser, AuthenticateUser)
-│ │ └── urlshortener/ # URL shortener use cases
-│ └── bootstrap/ # Dependency injection setup and application wiring
-├── migrations/ # Database migration files (.up.sql, .down.sql)
-├── scripts/ # Utility scripts (migration tool, dev shell)
-├── .env.example # Example environment variables file
-├── .gitignore # Git ignore file
-├── docker-compose.yml # Docker Compose configuration for all services
-├── Dockerfile # Production Docker image definition
-├── Dockerfile.dev # Development Docker image definition (includes dev tools)
-├── go.mod # Go module file
-├── go.sum # Go module checksum
-├── main.go # Application entry point & lifecycle management
-└── architecture.md # Mermaid diagram of the architecture
-
+├── .env                # Local environment variables (gitignored)
+├── .env.example        # Example environment variables file
+├── .gitignore          # Git ignore file
+├── Dockerfile          # Production Docker image definition
+├── Dockerfile.dev      # Development Docker image definition
+├── README.md           # This file
+├── architecture.md     # Mermaid diagram of the architecture
+├── conf/               # Configuration management (loading .env)
+├── domain/             # Core domain logic (business rules, entities)
+│   ├── identity/       # User management domain
+│   │   ├── entity/     # User entity definition
+│   │   ├── repository/ # Repository interfaces (contracts for data access)
+│   │   └── service/    # Identity domain services (e.g., user status logic)
+│   └── urlshortener/   # URL shortener domain
+│       ├── entity/     # URLMapping entity definition
+│       ├── repository/ # Repository interfaces
+│       └── service/    # URL shortening/lookup logic
+├── go.mod              # Go module file
+├── go.sum              # Go module checksum
+├── infra/              # Infrastructure implementations (database, cache)
+│   ├── database/       # Database connection setup (using GORM)
+│   └── persistence/    # Repository implementations (gorm, redis)
+├── internal/           # Internal application code (not meant for external reuse)
+│   ├── api/            # API layer (routing, handlers)
+│   │   ├── handler/    # HTTP request handlers (parsing, validation, calling app layer)
+│   │   └── router.go   # API route definitions using Gin
+│   ├── application/    # Application services (use cases orchestration)
+│   │   ├── identity/   # Identity use cases (RegisterUser, AuthenticateUser)
+│   │   └── urlshortener/ # URL shortener use cases
+│   └── bootstrap/      # Dependency injection setup and application wiring
+├── main.go             # Application entry point & lifecycle management
+├── migrations/         # Database migration files (*.up.sql, *.down.sql)
+└── scripts/            # Utility scripts (migration tool, dev shell)
+```
 
 ## API Endpoints
 
