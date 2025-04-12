@@ -1,54 +1,54 @@
 package conf
 
 import (
-	"os"
 	"log"
-	"github.com/joho/godotenv"
+	"os"
 	"strconv"
 	"sync"
+
+	"github.com/joho/godotenv"
 )
 
 type Database struct {
-	Host string
-	Port int
-	User string
+	Host     string
+	Port     string
+	User     string
 	Password string
-	DB_name string
+	DBName   string
 }
 
 type Redis struct {
 	Host     string
-	Port     int
+	Port     string
 	Password string
 	DB       int
 }
 
 type Config struct {
 	// Database
-	DB Database
+	DBHost     string
+	DBPort     string
+	DBUser     string
+	DBPassword string
+	DBName     string
 	// Redis
-	Redis Redis
+	RedisHost     string
+	RedisPort     string
+	RedisPassword string
+	RedisDB       int
 	// URL Shortener
 	ShortenerAlgorithm string
+	// Server
+	ServerPort string
 }
 
-var config Config
+var config *Config
 var loadConfigOnce sync.Once
 
 func loadConfig() {
 	err := godotenv.Load()
-    if err != nil {
-        log.Fatal("Error loading .env file")
-    }
-
-	dbPort, err := strconv.Atoi(os.Getenv("DB_PORT"))
 	if err != nil {
-		dbPort = 5432 // Default PostgreSQL port
-	}
-
-	redisPort, err := strconv.Atoi(os.Getenv("REDIS_PORT"))
-	if err != nil {
-		redisPort = 6379 // Default Redis port
+		log.Println("Warning: Error loading .env file, using environment variables")
 	}
 
 	redisDB, err := strconv.Atoi(os.Getenv("REDIS_DB"))
@@ -56,20 +56,19 @@ func loadConfig() {
 		redisDB = 0 // Default Redis DB
 	}
 
-	config = Config{
-		DB: Database{
-			Host: os.Getenv("DB_HOST"),
-			Port: dbPort,
-			User: os.Getenv("DB_USER"),
-			Password: os.Getenv("DB_PASSWORD"),
-			DB_name: os.Getenv("DB_NAME"),
-		},
-		Redis: Redis{
-			Host:     os.Getenv("REDIS_HOST"),
-			Port:     redisPort,
-			Password: os.Getenv("REDIS_PASSWORD"),
-			DB:       redisDB,
-		},
+	config = &Config{
+		// Database
+		DBHost:     os.Getenv("DB_HOST"),
+		DBPort:     os.Getenv("DB_PORT"),
+		DBUser:     os.Getenv("DB_USER"),
+		DBPassword: os.Getenv("DB_PASSWORD"),
+		DBName:     os.Getenv("DB_NAME"),
+		// Redis
+		RedisHost:     os.Getenv("REDIS_HOST"),
+		RedisPort:     os.Getenv("REDIS_PORT"),
+		RedisPassword: os.Getenv("REDIS_PASSWORD"),
+		RedisDB:       redisDB,
+		// URL Shortener
 		ShortenerAlgorithm: os.Getenv("SHORTENER_ALGORITHM"),
 	}
 
@@ -79,7 +78,7 @@ func loadConfig() {
 	}
 }
 
-func Conf() Config {
+func Conf() *Config {
 	loadConfigOnce.Do(loadConfig)
 	return config
 }

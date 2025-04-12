@@ -1,4 +1,4 @@
-package services
+package service
 
 import (
 	"crypto/md5"
@@ -9,57 +9,35 @@ import (
 	"time"
 )
 
-// ShortenerStrategy defines the interface for URL shortening algorithms
+// ShortenerStrategy 定義了 URL 縮短算法的介面
 type ShortenerStrategy interface {
 	Generate(input string, id int) *string
 }
 
-// Base62Strategy implements ShortenerStrategy using Base62 encoding
+// Base62Strategy 使用 Base62 編碼實現 ShortenerStrategy
 type Base62Strategy struct{}
 
-// Base64Strategy implements ShortenerStrategy using Base64 encoding
+// Base64Strategy 使用 Base64 編碼實現 ShortenerStrategy
 type Base64Strategy struct{}
 
-// MD5Strategy implements ShortenerStrategy using MD5 hash
+// MD5Strategy 使用 MD5 哈希實現 ShortenerStrategy
 type MD5Strategy struct{}
 
-// RandomStrategy implements ShortenerStrategy using random characters
+// RandomStrategy 使用隨機字符實現 ShortenerStrategy
 type RandomStrategy struct{}
 
 const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
-// URLShortener is the main service for shortening URLs
-type URLShortener struct {
-	strategy ShortenerStrategy
-}
-
-// NewURLShortener creates a new URL shortener with the specified strategy
-func NewURLShortener(strategy ShortenerStrategy) *URLShortener {
-	return &URLShortener{
-		strategy: strategy,
-	}
-}
-
-// SetStrategy changes the shortening strategy
-func (s *URLShortener) SetStrategy(strategy ShortenerStrategy) {
-	s.strategy = strategy
-}
-
-// ShortenURL generates a short URL using the current strategy
-func (s *URLShortener) ShortenURL(originalURL string, id int) *string {
-	return s.strategy.Generate(originalURL, id)
-}
-
-// Generate implements ShortenerStrategy for Base62Strategy
+// Generate 實現 Base62Strategy 的 Generate 方法
 func (s *Base62Strategy) Generate(input string, id int) *string {
 	return DecimalToBase62(id)
 }
 
-// Generate implements ShortenerStrategy for Base64Strategy
+// Generate 實現 Base64Strategy 的 Generate 方法
 func (s *Base64Strategy) Generate(input string, id int) *string {
-	// Convert ID to string and encode with base64
+	// 將 URL 轉換為 Base64 編碼並取前 8 個字符
 	idStr := strings.TrimSpace(strings.Replace(base64.StdEncoding.EncodeToString([]byte(input)), "=", "", -1))
-	// Take first 8 characters or less if string is shorter
+	// 取前 8 個字符，如果字符串較短則取全部
 	length := 8
 	if len(idStr) < length {
 		length = len(idStr)
@@ -68,22 +46,22 @@ func (s *Base64Strategy) Generate(input string, id int) *string {
 	return &result
 }
 
-// Generate implements ShortenerStrategy for MD5Strategy
+// Generate 實現 MD5Strategy 的 Generate 方法
 func (s *MD5Strategy) Generate(input string, id int) *string {
-	// Create MD5 hash of the original URL + ID
+	// 創建 URL + ID 的 MD5 哈希
 	hasher := md5.New()
 	hasher.Write([]byte(input + string(rune(id))))
 	hashStr := hex.EncodeToString(hasher.Sum(nil))
-	// Take first 8 characters
+	// 取前 8 個字符
 	result := hashStr[:8]
 	return &result
 }
 
-// Generate implements ShortenerStrategy for RandomStrategy
+// Generate 實現 RandomStrategy 的 Generate 方法
 func (s *RandomStrategy) Generate(input string, id int) *string {
-	// Initialize random number generator with seed
+	// 初始化隨機數生成器
 	rand.Seed(time.Now().UnixNano())
-	// Generate 8 random characters
+	// 生成 8 個隨機字符
 	var result strings.Builder
 	for i := 0; i < 8; i++ {
 		randomIndex := rand.Intn(len(charset))
@@ -93,7 +71,7 @@ func (s *RandomStrategy) Generate(input string, id int) *string {
 	return &resultStr
 }
 
-// DecimalToBase62 converts a decimal number to a base62 string
+// DecimalToBase62 將十進制數轉換為 Base62 字符串
 func DecimalToBase62(decimalNum int) *string {
 	var result strings.Builder
 	base := 62
@@ -104,7 +82,7 @@ func DecimalToBase62(decimalNum int) *string {
 		decimalNum /= base
 	}
 
-	// Reverse the string because we built it from right to left
+	// 反轉字符串，因為我們是從右到左構建的
 	reversed := result.String()
 	var final strings.Builder
 	for i := len(reversed) - 1; i >= 0; i-- {
