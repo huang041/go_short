@@ -9,8 +9,9 @@ import (
 	// Identity Domain Imports
 	// (如果需要在 bootstrap 中引用)
 
-	// URL Shortener Domain Imports (保持現有)
+	identityservice "go_short/domain/identity/service"
 	urlshortenerservice "go_short/domain/urlshortener/service"
+
 	// Infrastructure Imports
 	"go_short/infra/database"
 	gormpersistence "go_short/infra/persistence/gorm"
@@ -77,24 +78,23 @@ func InitDependencies() (*Dependencies, error) {
 	// --- URL Shortener Domain Dependencies ---
 	urlRepo := gormpersistence.NewGormURLRepository(db)
 	cacheRepo := redispersistence.NewRedisCacheRepository(redisClient)
-	urlDomainService := urlshortenerservice.NewURLService(urlRepo, cacheRepo, 24*time.Hour) // Assuming this constructor exists
-	urlApp := urlshortenerapp.NewApp(urlDomainService)                                      // Assume NewApp takes the service now
-	urlHandler := handler.NewURLHandler(urlDomainService)                                   // Handler depends on Domain Service
+	urlDomainService := urlshortenerservice.NewURLService(urlRepo, cacheRepo, 24*time.Hour)
+	urlApp := urlshortenerapp.NewApp(urlDomainService)
+	urlHandler := handler.NewURLHandler(urlDomainService)
 	log.Println("URL Shortener dependencies initialized.")
 
 	// --- Identity Domain Dependencies ---
 	userRepo := gormpersistence.NewGormUserRepository(db)
-	// identityDomainService := identityservice.NewIdentityService(userRepo) // Create Identity Domain Service
-	identityApplication := identityapp.NewApp(userRepo) // Create Identity Application Service
-	// (如果 identityApp 需要 identityDomainService, 則注入: identityapp.NewApp(userRepo, identityDomainService))
-	userHandler := handler.NewUserHandler(identityApplication) // Create User Handler, inject App Service
+	identityDomainService := identityservice.NewIdentityService(userRepo)
+	identityApplication := identityapp.NewApp(userRepo, identityDomainService)
+	userHandler := handler.NewUserHandler(identityApplication)
 	log.Println("Identity dependencies initialized.")
 
 	// --- API Router Setup ---
 	ginEngine := gin.Default()
 	// 傳遞所有需要的 Handlers 給 Router
-	apiRouter := api.NewRouter(ginEngine, urlHandler, userHandler, config) // 修改 NewRouter 以接收 UserHandler
-	apiRouter.SetupRoutes()                                                // SetupRoutes 內部應分別設定 URL 和 User 路由
+	apiRouter := api.NewRouter(ginEngine, urlHandler, userHandler, config)
+	apiRouter.SetupRoutes()
 	log.Println("API Router initialized and routes set up.")
 	// --- 依賴注入結束 ---
 
@@ -104,8 +104,8 @@ func InitDependencies() (*Dependencies, error) {
 		RedisClient: redisClient,
 		GinEngine:   ginEngine,
 		URLApp:      urlApp,
-		IdentityApp: identityApplication, // 保存 Identity App 實例
-		UserHandler: userHandler,         // 保存 User Handler 實例
+		IdentityApp: identityApplication,
+		UserHandler: userHandler,
 		URLHandler:  urlHandler,
 	}
 

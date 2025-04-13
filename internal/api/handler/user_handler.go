@@ -56,7 +56,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 	})
 }
 
-// Login 處理使用者登入請求
+// Login 處理使用者登入請求，返回 JWT
 func (h *UserHandler) Login(c *gin.Context) {
 	var request struct {
 		Username string `json:"username" binding:"required"`
@@ -68,19 +68,23 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := h.identityApp.AuthenticateUser(c.Request.Context(), request.Username, request.Password)
+	// 呼叫 App 層進行認證，獲取 token
+	tokenString, err := h.identityApp.AuthenticateUser(c.Request.Context(), request.Username, request.Password)
 	if err != nil {
-		// 對於認證失敗，統一返回未授權錯誤
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		// 根據錯誤類型返回不同狀態碼
+		if errors.Is(err, identityapp.ErrAuthenticationFailed) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		} else {
+			// 其他錯誤（如 Token 生成失敗）視為內部錯誤
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Login failed"})
+		}
 		return
 	}
 
-	// 登入成功
-	// 在實際應用中，這裡通常會生成一個 JWT 或 Session Token 返回給客戶端
+	// 登入成功，返回 JWT
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login successful",
-		"user_id": user.ID, // 示例：返回用戶 ID
-		// "token": "your_generated_jwt_token", // 返回 token
+		"token":   tokenString, // 在回應中包含 token
 	})
 }
 
