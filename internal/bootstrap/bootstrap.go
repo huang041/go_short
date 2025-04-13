@@ -9,8 +9,9 @@ import (
 	// Identity Domain Imports
 	// (如果需要在 bootstrap 中引用)
 
-	// URL Shortener Domain Imports (保持現有)
+	identityservice "go_short/domain/identity/service"
 	urlshortenerservice "go_short/domain/urlshortener/service"
+
 	// Infrastructure Imports
 	"go_short/infra/database"
 	gormpersistence "go_short/infra/persistence/gorm"
@@ -84,8 +85,8 @@ func InitDependencies() (*Dependencies, error) {
 
 	// --- Identity Domain Dependencies ---
 	userRepo := gormpersistence.NewGormUserRepository(db)
-	// identityDomainService := identityservice.NewIdentityService(userRepo) // Create Identity Domain Service
-	identityApplication := identityapp.NewApp(userRepo) // Create Identity Application Service
+	identityDomainService := identityservice.NewIdentityService(userRepo)      // Create Identity Domain Service
+	identityApplication := identityapp.NewApp(userRepo, identityDomainService) // Create Identity Application Service
 	// (如果 identityApp 需要 identityDomainService, 則注入: identityapp.NewApp(userRepo, identityDomainService))
 	userHandler := handler.NewUserHandler(identityApplication) // Create User Handler, inject App Service
 	log.Println("Identity dependencies initialized.")
