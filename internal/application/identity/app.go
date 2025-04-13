@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"go_short/domain/identity/entity"
@@ -26,30 +25,29 @@ var ErrTokenGeneration = errors.New("failed to generate token")
 type App struct {
 	userRepo        repository.UserRepository
 	identityService service.IdentityService
-	jwtSecret       []byte
-	jwtExpiration   time.Duration
+	jwtSecret       []byte        // 從外部注入
+	jwtExpiration   time.Duration // 從外部注入
 }
 
-// NewApp 創建 Identity 應用服務實例
-func NewApp(userRepo repository.UserRepository, identityService service.IdentityService) *App {
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		log.Println("Warning: JWT_SECRET environment variable not set. Using default insecure key.")
-		secret = "a_very_insecure_default_secret_key_change_me"
+// NewApp 創建 Identity 應用服務實例，接收依賴和 JWT 配置
+func NewApp(
+	userRepo repository.UserRepository,
+	identityService service.IdentityService,
+	jwtSecret []byte, // 接收密鑰
+	jwtExpiration time.Duration, // 接收過期時間
+) *App {
+	if len(jwtSecret) == 0 {
+		log.Fatal("CRITICAL: JWT secret provided to Identity App is empty.") // 密鑰為空是嚴重錯誤
 	}
-
-	expStr := os.Getenv("JWT_EXPIRATION_HOURS")
-	expHours, err := time.ParseDuration(expStr + "h")
-	if err != nil || expHours <= 0 {
-		log.Printf("Warning: Invalid or missing JWT_EXPIRATION_HOURS. Using default 24 hours. Error: %v", err)
-		expHours = 24 * time.Hour
+	if jwtExpiration <= 0 {
+		log.Println("Warning: Invalid JWT expiration provided to Identity App. Using default 24h.")
+		jwtExpiration = 24 * time.Hour
 	}
-
 	return &App{
 		userRepo:        userRepo,
 		identityService: identityService,
-		jwtSecret:       []byte(secret),
-		jwtExpiration:   expHours,
+		jwtSecret:       jwtSecret,     // 保存注入的密鑰
+		jwtExpiration:   jwtExpiration, // 保存注入的過期時間
 	}
 }
 
